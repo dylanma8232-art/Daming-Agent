@@ -63,10 +63,10 @@
 ### 💻 5. 开发者 SDK 代码示例 (Developer Examples)
 
 ```python
-from daming_agent.agent import LocalAgent
+from daming_agent import DamingAgent
 
-# 初始化 Agent
-agent = LocalAgent()
+# 初始化 DamingAgent
+agent = DamingAgent()
 
 # 运行任务
 response = agent.reply_message_stream("分析当前项目结构并输出重构建议")

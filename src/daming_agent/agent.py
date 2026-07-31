@@ -73,8 +73,9 @@ SYSTEM_PROMPT = """你的名字是 Agent。你是运行在用户电脑上的工�
 
 
 
-class LocalAgent:
-    """标准工业级自主 Agent 引擎：Config -> Memory (Daming OS Unified Session) -> Skills -> MCP -> Retry -> Context -> Hook -> TokenTracker -> Trace Logger。"""
+class DamingAgent:
+    """标准工业级自主 Agent 引擎：Config -> Memory -> Skills -> MCP -> Retry -> Context -> Hook -> TokenTracker -> Trace Logger。"""
+
 
     def __init__(self, config_path: Optional[Path] = None) -> None:
         base_dir = Path(__file__).parent
@@ -1848,3 +1849,9 @@ class LocalAgent:
                 },
             },
         ]
+
+
+LocalAgent = DamingAgent
+
+
+
