@@ -5,21 +5,31 @@ import threading
 import time
 from pathlib import Path
 
+# 自动挂载 src 源码目录支持模块查找
+SRC_DIR = Path(__file__).resolve().parent / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+AGENT_DIR = SRC_DIR / "daming_agent"
+if str(AGENT_DIR) not in sys.path:
+    sys.path.insert(0, str(AGENT_DIR))
+
 import uvicorn
 from dotenv import load_dotenv
 
-from agent import LocalAgent
-from channels.cli_channel import CLIChannel
-from channels.feishu_channel import FeishuChannel
-from logger import get_logger, init_logging
-from process_lock import ProcessLock
+from daming_agent.agent import LocalAgent
+from daming_agent.channels.cli_channel import CLIChannel
+from daming_agent.channels.feishu_channel import FeishuChannel
+from daming_agent.logger import get_logger, init_logging
+from daming_agent.process_lock import ProcessLock
+
 
 logger = get_logger("app")
 
 
 def start_dashboard(agent: LocalAgent, port: int = 8000) -> tuple[uvicorn.Server, threading.Thread]:
     """在同一进程内启动管理后台，复用同一个 Agent 运行时。"""
-    from web_server import app as dashboard_app, configure_agent
+    from daming_agent.web_server import app as dashboard_app, configure_agent
+
 
     configure_agent(agent)
     server = uvicorn.Server(

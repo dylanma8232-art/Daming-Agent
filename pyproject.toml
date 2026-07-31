@@ -42,5 +42,5 @@ Issues = "https://github.com/dylanma8232-art/Daming-Agent/issues"
 daming-agent = "app:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["channels*", "hooks*", "skills*", "tool_plugins*"]
+where = ["src"]
+
