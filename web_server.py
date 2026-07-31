@@ -21,13 +21,7 @@ logger = get_logger("web_server")
 load_dotenv()
 app = FastAPI(title="Daming Agent Web Management Dashboard", version="1.0.0")
 
-# 挂载 Daming OS HTTP 中间件自动注入 AgentContext 与事件追踪
-try:
-    from daming_os.middleware import DamingMiddleware
-    app.add_middleware(DamingMiddleware)
-    logger.info("🌐 [Daming OS 中间件挂载成功]: 已为 Web Dashboard 开启请求上下文与 Trace 关联")
-except Exception as e:
-    logger.warning(f"⚠️ [Daming OS 中间件挂载告警]: {e}")
+
 
 base_dir = Path(__file__).parent
 static_dir = base_dir / "static"
@@ -69,15 +63,16 @@ async def get_status():
 
     return JSONResponse({
         "status": "online",
-        "agent_name": "Daming Agent",
+        "agent_name": "Agent",
         "model": model_name,
-        "super_admin": "Wenchen Ma (马文晨)",
+        "super_admin": "Super Admin",
         "feishu_configured": bool(feishu_app_id),
         "feishu_ws_status": "connected" if feishu_app_id else "disabled",
         "official_skills_count": skills_count,
-        "memory_backend": "daming",
+        "memory_backend": getattr(agent.memory, "backend", "json"),
         "total_tokens_used": agent.token_tracker.get_summary()["global_totals"]["total_tokens"] if hasattr(agent, "token_tracker") else 0
     })
+
 
 @app.get("/api/logs")
 async def get_logs(limit: int = 200, level: str = ""):
