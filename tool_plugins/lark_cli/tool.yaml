@@ -1,0 +1,12 @@
+name: lark_cli
+description: "发现和诊断已安装的飞书官方 CLI/Skill 能力（只读）。"
+executor: "tool_plugins.lark_cli.executor:run"
+schema:
+  type: object
+  required: [argv]
+  properties:
+    argv:
+      type: array
+      description: "只读 lark-cli 参数，例如 [skills, list]、[schema, im.messages.get] 或 [doctor]。"
+      items:
+        type: string

@@ -1,0 +1,516 @@
+:root {
+  --bg-dark: #090C15;
+  --panel-bg: rgba(18, 24, 38, 0.75);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --accent-blue: #3B82F6;
+  --accent-cyan: #06B6D4;
+  --accent-green: #10B981;
+  --accent-purple: #8B5CF6;
+  --text-main: #F3F4F6;
+  --text-muted: #9CA3AF;
+  --font-family: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  height: 100vh;
+  overflow: hidden;
+  background-image: 
+    radial-gradient(at 10% 10%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
+    radial-gradient(at 90% 90%, rgba(139, 92, 246, 0.12) 0px, transparent 50%);
+}
+
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* 侧边导航栏 */
+.sidebar {
+  width: 280px;
+  background: rgba(13, 17, 28, 0.85);
+  backdrop-filter: blur(16px);
+  border-right: 1px solid var(--panel-border);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+  padding-left: 8px;
+}
+
+.logo-icon {
+  font-size: 32px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+}
+
+.brand-info h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFF;
+}
+
+.version-tag {
+  font-size: 11px;
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--accent-cyan);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #FFF;
+}
+
+.nav-item.active {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.1));
+  color: #FFF;
+  border-left: 3px solid var(--accent-blue);
+}
+
+.sidebar-footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.admin-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+}
+
+.admin-title {
+  display: block;
+  font-size: 11px;
+  color: var(--accent-green);
+}
+
+.admin-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #FFF;
+}
+
+/* 主内容区 */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  padding: 24px;
+}
+
+.top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-title h1 {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.status-indicators {
+  display: flex;
+  gap: 12px;
+}
+
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.indicator-dot.online {
+  background-color: var(--accent-green);
+  box-shadow: 0 0 10px var(--accent-green);
+}
+
+.tab-content {
+  display: none;
+  flex: 1;
+  height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+.tab-content.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.runtime-card { gap: 14px; padding: 24px; overflow-y: auto; }
+.runtime-heading { display: flex; justify-content: space-between; align-items: center; }
+.runtime-heading p, .runtime-empty { color: var(--text-muted); font-size: 13px; margin-top: 5px; }
+.runtime-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 10px; }
+.runtime-row { display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255,255,255,.04); border-radius: 8px; font-size: 12px; }
+.runtime-row span { flex: 1; color: var(--text-muted); }
+.runtime-row button { background: rgba(59,130,246,.2); border: 1px solid var(--panel-border); color: var(--text-main); border-radius: 6px; padding: 5px 9px; cursor: pointer; }
+
+/* Chat 对话界面 */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  backdrop-filter: blur(16px);
+  overflow: hidden;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message {
+  display: flex;
+  gap: 14px;
+  max-width: 85%;
+}
+
+.message.user-message {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.msg-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.msg-body {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--panel-border);
+  padding: 14px 18px;
+  border-radius: 14px;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.user-message .msg-body {
+  background: linear-gradient(135deg, var(--accent-blue), #2563EB);
+  border: none;
+}
+
+.msg-author {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.chat-input-area {
+  padding: 16px 20px;
+  background: rgba(13, 17, 28, 0.9);
+  border-top: 1px solid var(--panel-border);
+}
+
+.input-wrapper {
+  display: flex;
+  gap: 12px;
+}
+
+textarea {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #FFF;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+}
+
+textarea:focus {
+  border-color: var(--accent-blue);
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  border: none;
+  color: #FFF;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.2s ease;
+}
+
+.primary-btn:hover {
+  opacity: 0.9;
+}
+
+.input-tips {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+#new-conversation-btn {
+  margin-left: 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent-cyan);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+/* 卡片与 Grid */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.glass-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(16px);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.glass-card h3 {
+  font-size: 16px;
+  margin-bottom: 20px;
+  color: #FFF;
+}
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.code-badge {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  color: var(--accent-cyan);
+}
+
+.badge {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.badge.success { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+.badge.info { background: rgba(6, 182, 212, 0.2); color: var(--accent-cyan); }
+.badge.primary { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
+
+.feature-bullets {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bullet-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.bullet-icon {
+  font-size: 24px;
+}
+
+/* Skills 列表 */
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.skill-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  padding: 16px;
+  border-radius: 12px;
+  transition: transform 0.2s ease;
+}
+
+.skill-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-blue);
+}
+
+.skill-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  margin-bottom: 6px;
+}
+
+.skill-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.constitution-box pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* 运营台视觉收敛：减少大面积玻璃和渐变，让状态与操作优先。 */
+:root {
+  --bg-dark: #0b1020;
+  --panel-bg: #121a2d;
+  --panel-border: #26324a;
+  --accent-blue: #6b8cff;
+  --accent-cyan: #86d6ff;
+  --accent-green: #4fce9a;
+  --accent-purple: #a68cff;
+  --text-main: #edf2ff;
+  --text-muted: #91a0bd;
+}
+body { background: #0b1020; background-image: linear-gradient(135deg, #0b1020 0%, #0e1630 52%, #10162a 100%); }
+.sidebar { width: 248px; padding: 20px 12px; background: #0d1425; border-right-color: #26324a; backdrop-filter: none; }
+.brand { margin-bottom: 26px; padding-left: 10px; }
+.logo-icon { width: 40px; height: 40px; border-radius: 11px; font-size: 23px; background: #263b81; box-shadow: none; }
+.brand-info h2 { font-size: 16px; letter-spacing: .1px; }
+.version-tag { display: inline-block; margin-top: 3px; padding: 2px 5px; border-radius: 4px; background: #1b2744; color: #91a9e9; font-size: 9px; letter-spacing: .45px; }
+.nav-menu { gap: 4px; }
+.nav-item { padding: 10px 12px; border-radius: 8px; font-size: 13px; }
+.nav-item.active { background: #1b2a50; border-left: 0; box-shadow: inset 3px 0 0 #6b8cff; }
+.main-content { padding: 22px 28px; }
+.top-header { padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid #26324a; }
+.header-title h1 { font-size: 22px; letter-spacing: -.25px; }
+.subtitle { font-size: 12px; }
+.status-indicators { gap: 8px; }
+.status-card { padding: 7px 10px; border-radius: 7px; background: #121a2d; border-color: #26324a; backdrop-filter: none; font-size: 11px; }
+.status-card strong { font-size: 11px; }
+.tab-content { height: calc(100vh - 132px); }
+.glass-card, .chat-container { background: #121a2d; border-color: #26324a; border-radius: 12px; backdrop-filter: none; box-shadow: 0 16px 36px rgba(0,0,0,.12); }
+.glass-card { padding: 20px; }
+.glass-card h3 { margin-bottom: 16px; font-size: 15px; }
+.chat-messages { padding: 22px; gap: 13px; }
+.msg-avatar { width: 32px; height: 32px; border-radius: 8px; font-size: 15px; background: #1d2943; }
+.msg-body { padding: 11px 14px; border-radius: 10px; background: #17213a; border-color: #293653; }
+.user-message .msg-body { background: #3657b6; }
+.chat-input-area { padding: 14px 16px; background: #0f1729; border-top-color: #26324a; }
+textarea { border-radius: 8px; background: #111b30; border-color: #2a3854; padding: 11px 13px; }
+.primary-btn { min-height: 38px; border-radius: 8px; background: #5578ea; padding: 0 16px; }
+.primary-btn:hover { background: #6688f4; opacity: 1; }
+.grid-2 { gap: 14px; }
+.info-list { gap: 10px; }
+.info-item { padding: 9px 0; border-bottom: 1px solid #202d47; font-size: 13px; }
+.info-item:last-child { border-bottom: 0; }
+.badge { border-radius: 5px; padding: 4px 7px; }
+.runtime-card { padding: 22px; }
+.runtime-heading { padding-bottom: 16px; border-bottom: 1px solid #26324a; }
+.runtime-card h4 { margin-top: 10px; color: #cad5ef; font-size: 12px; text-transform: uppercase; letter-spacing: .75px; }
+.runtime-list { gap: 6px; }
+.runtime-row { min-height: 42px; padding: 9px 11px; border: 1px solid #26324a; background: #10192d; border-radius: 7px; }
+.runtime-row code { color: #a8c1ff; }
+.runtime-row button { background: #253b74; border-color: #38529a; }
+.runtime-row button:hover { background: #3150a0; }
+.skills-grid { gap: 12px; }
+.skill-card { padding: 14px; border-color: #26324a; background: #121a2d; border-radius: 9px; }
+.skill-card:hover { transform: none; background: #16213a; border-color: #4b64ad; }
+@media (max-width: 980px) {
+  .sidebar { width: 210px; }
+  .status-indicators { display: none; }
+  .grid-2 { grid-template-columns: 1fr; }
+}

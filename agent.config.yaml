@@ -1,0 +1,89 @@
+agent:
+  name: "Agent"
+  description: "工业级高能力个人与团队 Agent 平台"
+  system_prompt: "你的名字是 Agent。你是运行在用户电脑上的高能力个人 Agent。"
+  timeout: 30
+
+model:
+  primary_model: "qwen3.7-plus"
+  fallback_model: "kimi/kimi-k3"
+  fast_model: "qwen-turbo"
+  router_enabled: true
+
+  temperature: 0.7
+  max_retries: 3
+
+server:
+  dashboard_enabled: false # 停用自带的 Web 控制台
+
+
+context:
+  max_token_budget: 8000
+  auto_summarize: true
+
+# 所有渠道统一经 SessionManager 生成会话 ID；新增渠道只需新增这里的策略。
+sessions:
+  channels:
+    cli:
+      scope: "conversation"
+    web_dashboard:
+      scope: "conversation"
+    feishu:
+      p2p_scope: "conversation"
+      group_scope: "conversation" # 每个群一个上下文；不同群绝不串
+
+# 默认后台操控，不打断桌面；用户明确要求“打开给我看”时，Agent 才会显示窗口。
+browser:
+  headless: true
+  slow_mo_ms: 80
+
+memory:
+  backend: "json"
+  lancedb_dir: "data/lancedb"
+  embedding_model: "text-embedding-v4"
+
+
+
+
+skills:
+  enabled: true
+  roots:
+    - "skills"          # 本项目自定义能力
+    - ".agents/skills"  # npx skills add / 飞书官方 Skill 包
+
+
+mcp:
+  enabled: true
+  # 新增 MCP 只需添加一项；启动时自动连接并通过 tools/list 注册全部工具。
+  # servers:
+  #   - name: "example"
+  #     command: "npx"
+  #     args: ["-y", "@example/mcp-server"]
+  #     enabled: true
+  servers: []
+
+tools:
+  # 新增受信任 Tool 插件：在此目录放置 tool.yaml 与 executor 即可自动注册。
+  plugin_roots: ["tool_plugins"]
+
+# 外部能力目录只允许读取候选；安装必须由 Agent 审批流单独执行。
+capability_discovery:
+  sources:
+    - name: "GitHub"
+      type: "github"
+    - name: "LobeHub Skills"
+      type: "lobehub"
+
+orchestration:
+  max_subagents: 4       # 同一主 Agent 最多并行子 Agent 数
+  cron_poll_seconds: 5  # 本地 Cron 轮询间隔
+
+channels:
+  cli:
+    enabled: true
+  feishu:
+    enabled: true
+    auto_start_with_cli: true # 启动时自动并行接入飞书 Bot、终端 CLI 与 Web 控制台
+    connection_type: "websocket" # 免公网 IP WebSocket 长连接
+    group_at_only: true          # 群聊仅响应 @机器人 消息
+    allowed_users: "*"           # 私聊白名单 (支持 * 或指定 open_id)
