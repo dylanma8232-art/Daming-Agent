@@ -58,12 +58,17 @@ SYSTEM_PROMPT = """你的名字是 Agent。你是运行在用户电脑上的工�
 - 拒绝套话废话，言简意赅，直击要害。
 - 表达自然接地气、有人味，像靠谱顶尖的技术搭档，不做机械死板的机器人说教。
 
+【远程/飞书渠道视觉原则 (Feishu & Remote Principles)】
+- 当用户通过飞书或移动端聊天时，用户无法直接看到服务器/电脑屏幕窗口。
+- 任何需要向用户展示网页画面、二维码、登录弹窗、验证码或操作过程场景，【必须调用 screenshot 工具进行页面截图】。系统会将截图自动发送到飞书聊天框中供用户在手机端查看或长按扫码！
+
 【基础规则与工具使用】
 1. 需要查看、编辑或创建文件时，使用文件工具；所有文件与命令操作严格限定在 workspace 目录及其子目录下。
 2. 需要实时网络资讯、查找文档或知识检索时，必须使用 web_search 检索，读取具体网页使用 fetch_webpage。
-3. 【严禁滥用重型浏览器工具】：Playwright 网页浏览器工具 (open_browser / click_element 等) 资源开销极大且较慢，【非必要绝不使用】！严禁使用 open_browser 执行常规搜索或阅读普通网页。只有在以下情况才允许使用：
-   a) 用户明确指示“打开浏览器给我看”、“在页面上显示过程”；
-   b) 遇到必须进行 UI 交互的复杂动态网页（如登录、扫码、填写表单提交、拖拽点击等 fetch_webpage 无法获取的场景）。
+3. 【浏览器工具使用策略】：日常资讯检索优先使用 web_search 与 fetch_webpage。当遇到以下情况时，必须自动切换调用 open_browser 网页浏览器工具进行深度抓取：
+   a) 通用 web_search / fetch_webpage 无法获取到有效信息（特别是 X/Twitter、社交平台防爬虫限制、或强 JS 动态渲染页面）；
+   b) 需要进行 UI 交互、登录、扫码或点击提交表单等场景；
+   c) 用户明确指示“打开浏览器给我看”或“在页面上显示过程”。
 4. 需要运行 Python 脚本或执行 Shell 命令时，使用 run_command 工具。
 5. 只有用户明确要求记住，或内容是稳定的用户偏好/长期项目事实时，才使用 remember 工具。
 6. 涉及多个有依赖的并行步骤、多个子 Agent 或长任务时，优先创建任务图：节点必须有明确目标、依赖和验收条件；只派发已就绪节点。
@@ -238,6 +243,11 @@ class DamingAgent:
                 self._session_tools[session_id] = tools
             return tools
 
+    def _get_session_history(self, session_id: str) -> list[dict[str, Any]]:
+        if session_id not in self._histories:
+            self._histories[session_id] = self.memory.load_history(session_id)
+        return self._histories[session_id]
+
     def _daming_before_turn(self, user_input: str, session_id: str, run_id: str) -> dict[str, Any]:
         """唯一的 Daming 生命周期入口，避免 Memory 与 Runtime 双写。"""
         if self.daming_runtime:
@@ -245,7 +255,7 @@ class DamingAgent:
                 "input": user_input,
                 "agent_id": "daming-agent",
                 "session_id": session_id,
-                "metadata": {"trace_id": run_id, "messages": self._histories.get(session_id, [])[-12:]},
+                "metadata": {"trace_id": run_id, "messages": self._get_session_history(session_id)[-12:]},
             })
         return {"daming_memories": self.memory.before_turn(user_input, session_id=session_id)}
 
@@ -370,6 +380,7 @@ class DamingAgent:
             # A new chat must not inherit the old model context.  Persistent
             # long-term memory intentionally remains available as designed.
             self._histories.pop(session_id, None)
+            self.memory.clear_history(session_id)
             self.conversation_runtime.clear_context_summary(session_id)
         logger.info(f"🛑 [会话控制已执行] action={action} session_id={session_id} run_id={run_id or '-'}")
 
@@ -433,7 +444,7 @@ class DamingAgent:
                 "content": f"{SYSTEM_PROMPT}\n\n{_env_context}\n\n当前请求意图：{intent.primary.value}。\n\n已加载的专家技能 SOP 列表：\n{skills_hint}\n\n和当前请求相关的长期记忆：\n{memory_hint}",
             },
             *([{"role": "system", "content": f"Agent 会话滚动摘要（早期对话）：\n{session_summary}"}] if session_summary else []),
-            *self._histories.get(session_id, [])[-12:],
+            *self._get_session_history(session_id)[-12:],
             {"role": "user", "content": user_input},
         ]
         if compacted_hint:
@@ -539,11 +550,12 @@ class DamingAgent:
                     self.runtime_store.finish_run(run_id, "cancelled", current_step="已被更新消息替代")
                     return ""
                 
-                session_history = self._histories.setdefault(session_id, [])
+                session_history = self._get_session_history(session_id)
                 session_history.extend([
                     {"role": "user", "content": user_input},
                     {"role": "assistant", "content": answer},
                 ])
+                self.memory.save_history(session_id, session_history)
                 self._daming_after_turn(user_input, answer, session_id, run_id)
                 if self.daming_runtime:
                     self.daming_runtime.quality.complete(run_id)
@@ -703,6 +715,7 @@ class DamingAgent:
             return
         self.conversation_runtime.save_context_summary(session_id, summary, len(older))
         self._histories[session_id] = recent
+        self.memory.save_history(session_id, recent)
 
     def execute_approved(self, approval_id: str) -> dict[str, Any]:
         """由管理端批准后调用；审批记录只能被一次领取和重放。"""
@@ -918,10 +931,16 @@ class DamingAgent:
             )
         if name == "type_text":
             return tools.type_text(arguments.get("selector", ""), arguments.get("text", ""), session_id=session_id)
+        if name == "press_key":
+            return tools.press_key(arguments.get("key", "Enter"), session_id=session_id)
         if name == "screenshot":
             return tools.screenshot(arguments.get("relative_path", "screenshot.png"), session_id=session_id)
         if name == "close_browser":
             return tools.close_browser(session_id=session_id)
+        if name == "request_human_intervention":
+            return tools.request_human_intervention(arguments.get("reason", "需要在页面上手工操作"), session_id=session_id)
+        if name == "resume_agent_control":
+            return tools.resume_agent_control(session_id=session_id)
         if name == "run_command":
             return tools.run_command(arguments.get("command", ""), arguments.get("relative_cwd", "."))
         if name == "remember":
@@ -1743,7 +1762,7 @@ class DamingAgent:
                 "type": "function",
                 "function": {
                     "name": "open_browser",
-                    "description": "【重型浏览器工具，非必要勿用】仅用于需 UI 交互（登录/扫码/表单提交/复杂点击）或用户明确要求在窗口中观察网页过程的场景。常规搜索与网页查看【严禁使用此工具】，必须使用 web_search 与 fetch_webpage。",
+                    "description": "在网页浏览器中打开指定 URL 网址。当 web_search / fetch_webpage 无法获取信息（如 X/Twitter、动态渲染页面或需要登录/交互时），可自动调用此工具进行深度网页浏览。",
                     "parameters": {
                         "type": "object",
                         "required": ["url"],
@@ -1751,6 +1770,45 @@ class DamingAgent:
                             "url": {"type": "string", "description": "网页 URL 地址"},
                             "show_window": {"type": "boolean", "description": "只有用户明确要求查看浏览器操作时才设为 true，默认 false"},
                         },
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "press_key",
+                    "description": "在 Playwright 浏览器当前页面中按模拟键盘按键 (例如 Enter 提交搜索、Escape 关闭弹窗窗口、Tab 切换焦点等)。",
+                    "parameters": {
+                        "type": "object",
+                        "required": ["key"],
+                        "properties": {
+                            "key": {"type": "string", "description": "按键名称，例如 Enter, Escape, Tab, Backspace, ArrowDown"}
+                        },
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "request_human_intervention",
+                    "description": "当在网页中遇到必须人工处理的场景（如扫码登录、人机验证码校验、填写极验等）时，调用此工具临时解除鼠标锁定，请求人类进行人工介入操作。",
+                    "parameters": {
+                        "type": "object",
+                        "required": ["reason"],
+                        "properties": {
+                            "reason": {"type": "string", "description": "请求人类干预的具体原因（如：需要在页面上扫码登录）"}
+                        },
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "resume_agent_control",
+                    "description": "当人类在浏览器窗口中完成手工交互（登录/验证码）后，调用此工具重新恢复 AI 独占保护锁定并接管后续自动化流程。",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
                     },
                 },
             },

@@ -3,10 +3,10 @@
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-v1.0.0-orange.svg)](https://github.com/dylanma8232-art/Daming-Agent/releases/tag/v1.0.0)
+[![Release](https://img.shields.io/badge/release-v1.2.0-orange.svg)](https://github.com/dylanma8232-art/Daming-Agent/releases/tag/v1.2.0)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/dylanma8232-art/Daming-Agent/issues)
 
-[中文](#-中文) | [English](#-english)
+[中文](#-中文) | [English](#-english) | [迭代日志 Changelog](CHANGELOG.md)
 
 ---
 
@@ -21,6 +21,12 @@
 ---
 
 ### ✨ 2. 核心优势与王牌亮点 (Key Advantages)
+
+#### 🤖 浏览器人机协同干预 (Browser Human-in-the-Loop & HITL)
+内置物理防护遮罩与反自动化检测。遇到扫码登录或验证码校验时，Agent 自动调用 `request_human_intervention` 临时解禁控制权提示人类手工操作，完成后自动调用 `resume_agent_control` 恢复独占控制与 DOM 自动化。
+
+#### 💾 隔离式会话历史磁盘持久化 (Session History Persistence)
+按 `session_id` 隔离持久化保存会话历史至磁盘 (`sessions/{session_id}.json`)，支持跨请求与重启后无缝恢复，并提供 100 轮智能滑动截断安全防护。
 
 #### 🔀 中途实时插队干预 (Mid-Flight Live Steering)
 长链条任务运行中途，用户可以通过飞书或 CLI 发送新消息实时打断“插队”。Agent **无需重启进程、无需丢历史上下文**，即可在当前节点在线无感“掉头”重新规划并接着执行。

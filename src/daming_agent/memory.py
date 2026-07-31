@@ -40,8 +40,41 @@ class Memory:
         return self.recall(user_input, session_id=session_id)
 
     def after_turn(self, user_input: str, output: str, session_id: str = "default", agent_id: str = "agent", tenant_id: Optional[str] = None) -> None:
-        """在 Turn 完成后保存本轮会话摘要。"""
-        pass
+        """在 Turn 完成后保存本轮会话记忆摘要。"""
+        if user_input and output:
+            summary_text = f"用户: {user_input[:200]}\n回答: {output[:300]}"
+            self.store(summary_text, session_id=session_id, agent_id=agent_id, tenant_id=tenant_id)
+
+    def save_history(self, session_id: str, history: list[dict[str, Any]]) -> None:
+        """按 session_id 隔离持久化保存短期对话历史。"""
+        sessions_dir = self.path.parent / "sessions"
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+        session_file = sessions_dir / f"{session_id}.json"
+        try:
+            # 只保留最近 50 轮消息到磁盘文件中，保证读写效率与安全性
+            session_file.write_text(json.dumps(history[-100:], ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+
+    def load_history(self, session_id: str) -> list[dict[str, Any]]:
+        """按 session_id 读取保存的短期对话历史。"""
+        session_file = self.path.parent / "sessions" / f"{session_id}.json"
+        if not session_file.exists():
+            return []
+        try:
+            data = json.loads(session_file.read_text(encoding="utf-8"))
+            return data if isinstance(data, list) else []
+        except Exception:
+            return []
+
+    def clear_history(self, session_id: str) -> None:
+        """清空指定 session_id 的对话历史文件。"""
+        session_file = self.path.parent / "sessions" / f"{session_id}.json"
+        if session_file.exists():
+            try:
+                session_file.unlink()
+            except OSError:
+                pass
 
     def on_tool_call(self, tool_name: str, arguments: Any, result_preview: str, session_id: str = "default", agent_id: str = "agent", tenant_id: Optional[str] = None) -> None:
         """工具调用完成后的日志钩子。"""
@@ -92,4 +125,5 @@ class Memory:
         chinese = "".join(re.findall(r"[\u4e00-\u9fff]", text))
         words.update(chinese[index : index + 2] for index in range(len(chinese) - 1))
         return words
+
 

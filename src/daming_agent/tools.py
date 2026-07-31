@@ -459,11 +459,17 @@ class LocalTools:
                         self._pw = sync_playwright().start()
                     # 使用本机 Chrome 的独立 profile：兼容性优于 Playwright 自带
                     # Chromium，且登录态不会写入用户日常 Chrome profile。
-                    launch_options = {"headless": requested_headless, "slow_mo": self.browser_slow_mo_ms, "channel": "chrome"}
+                    launch_options = {
+                        "headless": requested_headless,
+                        "slow_mo": self.browser_slow_mo_ms,
+                        "channel": "chrome",
+                        "args": ["--test-type", "--disable-blink-features=AutomationControlled"],
+                        "ignore_default_args": ["--enable-automation"],
+                    }
                     try:
                         context = self._pw.chromium.launch_persistent_context(str(self._profile_dir(session_id)), **launch_options)
                     except Exception:
-                        launch_options.pop("channel")
+                        launch_options.pop("channel", None)
                         context = self._pw.chromium.launch_persistent_context(str(self._profile_dir(session_id)), **launch_options)
                     context.add_init_script(self._viewer_init_script())
                     page = context.pages[0] if context.pages else context.new_page()
@@ -474,11 +480,12 @@ class LocalTools:
                 try:
                     browser_session.page.goto(url, wait_until="domcontentloaded", timeout=20000)
                 finally:
+                    # 默认启用独占保护锁定，防止人类误触干扰 AI DOM 计算
                     self._set_agent_input(browser_session.page, False)
                 title = browser_session.page.title()
                 current_url = browser_session.page.url
                 body_text = browser_session.page.inner_text("body")[:1000].replace("\n", " ")
-                mode = "后台浏览器" if browser_session.headless else "可见的只读操作窗口"
+                mode = "后台浏览器" if browser_session.headless else "可见观察窗口(人类操作已锁定)"
                 return f"已在{mode}中打开网页:\n标题: {title}\n网址: {current_url}\n页面文本预览: {body_text}..."
         except Exception as e:
             return f"打开浏览器失败: {e}"
@@ -564,6 +571,22 @@ class LocalTools:
         except Exception as e:
             return f"输入文本失败: {e}"
 
+    def press_key(self, key: str = "Enter", session_id: str = "default") -> str:
+        """在浏览器当前页面模拟键盘按键 (如 Enter, Escape, Tab, Backspace, ArrowDown 等)。"""
+        browser_session = self._get_browser_session(session_id)
+        if browser_session is None:
+            return "浏览器尚未打开，请先调用 open_browser。"
+        try:
+            with self._browser_lock:
+                self._set_agent_input(browser_session.page, True)
+                try:
+                    browser_session.page.keyboard.press(key)
+                finally:
+                    self._set_agent_input(browser_session.page, not browser_session.headless)
+            return f"已成功在浏览器按键: {key}"
+        except Exception as e:
+            return f"模拟按键 {key} 失败: {e}"
+
     def screenshot(self, relative_path: str = "screenshot.png", session_id: str = "default") -> str:
         browser_session = self._get_browser_session(session_id)
         if browser_session is None:
@@ -598,6 +621,34 @@ class LocalTools:
                 return "已成功关闭当前会话的浏览器。"
         except Exception as e:
             return f"关闭浏览器出错: {e}"
+
+    def request_human_intervention(self, reason: str = "遇到需要人工干预的场景（如扫码登录、人机验证等）", session_id: str = "default") -> str:
+        """当遇到登录框、二维码或人机校验时，临时解除物理保护锁定，允许人类手工操作。"""
+        browser_session = self._get_browser_session(session_id)
+        if browser_session is None:
+            return "浏览器尚未打开，请先调用 open_browser。"
+        try:
+            with self._browser_lock:
+                # 临时解禁人类物理操作
+                self._set_agent_input(browser_session.page, True)
+                self._show_agent_cursor(browser_session.page, 120, 30, f"⚠️ 等待人类操作: {reason[:30]}", click=False)
+            return f"已临时开启人类操作权限（原因: {reason}）。请在窗口完成手工操作/登录后告诉我。"
+        except Exception as e:
+            return f"开启人类操作权限失败: {e}"
+
+    def resume_agent_control(self, session_id: str = "default") -> str:
+        """人类手工操作完成后，重新恢复 AI 独占保护锁定并恢复后续自动化流程。"""
+        browser_session = self._get_browser_session(session_id)
+        if browser_session is None:
+            return "浏览器尚未打开。"
+        try:
+            with self._browser_lock:
+                # 重新加锁保护
+                self._set_agent_input(browser_session.page, False)
+                self._show_agent_cursor(browser_session.page, -40, -40, "AI 已接管", click=False)
+            return "AI 已重新接管控制权，保护锁定已恢复。"
+        except Exception as e:
+            return f"恢复 AI 保护锁定失败: {e}"
 
     # --- 安全 Shell 命令执行 (P2) ---
 
