@@ -18,18 +18,8 @@
 
 它为开发者和团队提供了一套完整的 **Agent 运行时 (Runtime)**，解耦了模型层、记忆层、编排层、安全防护层与渠道层，内置了从 **动态意图裁剪、DAG 任务编排、多子代理并发、长短期记忆** 到 **物理沙箱防护与飞书长连接** 的全套工程化组件。
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        Daming Agent Core Framework                     │
-├────────────────────────────────────────────────────────────────────────┤
-│ 1. 渠道层 (Channels)     │ CLI REPL / 飞书 WebSocket / Outbox 离线队列   │
-│ 2. 路由层 (Routers)      │ IntentRouter (动态裁剪) / ModelRouter (熔断)  │
-│ 3. 编排层 (Orchestration)│ TaskGraphManager (DAG) / SubagentManager (并发)│
-│ 4. 记忆层 (Memory System)│ Memory (会话隔离) / ContextManager (防爆仓)  │
-│ 5. 防护层 (Security)     │ RiskPolicy (物理锁) / Hashline (防改砸)     │
-│ 6. 扩展层 (Extensibility)│ SkillManager (SOP) / ToolRegistry / MCP Client │
-└────────────────────────────────────────────────────────────────────────┘
-```
+![Daming Agent Core Framework Architecture](docs/images/architecture.png)
+
 
 ---
 
@@ -115,18 +105,8 @@ python app.py
 
 It provides developers with a full **Agent Runtime**, decoupling the model layer, memory layer, orchestration layer, security layer, and channel layer.
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        Daming Agent Core Framework                     │
-├────────────────────────────────────────────────────────────────────────┤
-│ 1. Channels Layer        │ CLI REPL / Feishu WebSocket / Outbox Queue     │
-│ 2. Router Layer          │ IntentRouter / ModelRouter (Auto Failover)     │
-│ 3. Orchestration Layer   │ TaskGraphManager (DAG) / SubagentManager      │
-│ 4. Memory System         │ Memory (Session Isolated) / ContextManager     │
-│ 5. Security Layer        │ RiskPolicy (EnvLock) / Hashline Precision Edit │
-│ 6. Extensibility Layer   │ SkillManager (SOP) / ToolRegistry / MCP Client │
-└────────────────────────────────────────────────────────────────────────┘
-```
+![Daming Agent Core Framework Architecture](docs/images/architecture.png)
+
 
 ---
 
