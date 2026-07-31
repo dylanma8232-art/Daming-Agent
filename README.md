@@ -1,4 +1,5 @@
 # 🚀 Daming Agent - 工业级通用自主 AI Agent 框架
+> **Industrial-Grade Universal Autonomous AI Agent Framework**
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
@@ -11,44 +12,84 @@
 
 ## 🇨🇳 中文
 
-### 🤖 1. 这个框架是做什么的？
+### 🏛️ 1. 什么是 Daming Agent 框架？
 
-**Daming Agent 是一个运行在你的电脑或服务器上的自主 AI 数字员工。**
+**Daming Agent** 是一个模块化、解耦、自带工业级防护与多代理编排的 **Python AI Agent 核心框架**。
 
-你只需在 **命令行终端 (CLI)** 或 **飞书群聊/私聊** 里给它一句自然语言指令（例如：“*帮我重构项目代码*”、“*抓取最新科技新闻导出 Excel*”、“*分析这份 PDF 并生成摘要*”），它就能全自动执行：
+它为开发者和团队提供了一套完整的 **Agent 运行时 (Runtime)**，解耦了模型层、记忆层、编排层、安全防护层与渠道层，内置了从 **动态意图裁剪、DAG 任务编排、多子代理并发、长短期记忆** 到 **物理沙箱防护与飞书长连接** 的全套工程化组件。
 
-- 💻 **代码开发与项目重构**：自动阅读代码库、定位 Bug、重写代码、运行 `pytest` 测试。
-- 🌐 **网页自动化与数据抓取**：操控无头浏览器搜集资料、抓取网页内容。
-- 📄 **文档处理与报表导出**：批量解析和生成 PDF、Word (.docx)、Excel (.xlsx) 报表。
-- 💬 **飞书 Bot 协作**：WebSocket 免公网 IP 接入飞书，支持单表情状态与交互卡片。
-
----
-
-### ✨ 2. 核心技术亮点
-
-- 🔀 **中途实时插队干预 (Mid-Flight Live Steering)**：长任务运行中随时发消息，Agent 在线实时掉头，不杀进程、不丢上下文。
-- 🛡️ **MD5 行哈希防改砸 (Hashline Precision Editing)**：修改大文件前强制校验 MD5 行签名，杜绝 LLM 行号漂移导致的代码改砸事故。
-- ⚡ **模型超时自动熔断降级 (Automatic Model Failover)**：主模型 504 超时或断连时，秒级无感切换至后备模型链，长流式任务 100% 保活。
-- 🛑 **EnvLock 物理安全手刹 (Physical Safety Gate)**：静态 AST 编译安检 + 物理目录锁，严禁越权修改 `.env` 密钥或误删敏感路径。
-- 🧠 **4 大认知引擎矩阵 (4 Cognitive Engines)**：按任务复杂度在 ReAct、TaskGraph DAG、Hierarchical Supervisor 与 Reflection 间自动调度。
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        Daming Agent Core Framework                     │
+├────────────────────────────────────────────────────────────────────────┤
+│ 1. 渠道层 (Channels)     │ CLI REPL / 飞书 WebSocket / Outbox 离线队列   │
+│ 2. 路由层 (Routers)      │ IntentRouter (动态裁剪) / ModelRouter (熔断)  │
+│ 3. 编排层 (Orchestration)│ TaskGraphManager (DAG) / SubagentManager (并发)│
+│ 4. 记忆层 (Memory System)│ Memory (会话隔离) / ContextManager (防爆仓)  │
+│ 5. 防护层 (Security)     │ RiskPolicy (物理锁) / Hashline (防改砸)     │
+│ 6. 扩展层 (Extensibility)│ SkillManager (SOP) / ToolRegistry / MCP Client │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-### 💡 3. 解决什么问题
+### 🧩 2. 8 大底层核心组件架构 (Framework Core Components)
 
-- **解决长任务跑偏失控**：消除传统 Agent 跑偏后只能 `Ctrl+C` 强杀进程、作废前期 Token 的痛点。
-- **解决代码改砸噩梦**：消除 LLM 修改大型代码文件时因行号漂移导致的代码改串行问题。
-- **解决 API 波动崩盘**：消除长链条任务执行中途因模型 504 超时或断连导致的前功尽弃问题。
+1. **ReAct & IntentRouter (动态意图路由器)**：根据用户输入的意图分类，自动按需裁剪无关 Tool Schema，将上下文 Token 消耗降低 60%。
+2. **TaskGraphManager (DAG 任务图编排引擎)**：解耦“规划 (Plan)”与“执行 (Execute)”，支持构建复杂多步骤拓扑图，自动分派 `supervisor`、`executor` 与 `reviewer` 节点。
+3. **SubagentManager (多代理并发调度器)**：支持主 Agent 在后台衍生多个独立并行子代理（Subagents），通过 SQLite 进行状态快照与任务回收。
+4. **ModelRouter (多模型路由与自动熔断)**：支持 API 或对话动态注册新模型；遇到网络断连或 504 超时，自动秒级无感降级切换至备用模型链。
+5. **Hashline (MD5 行哈希防改砸编辑器)**：写入大文件前强制对目标代码段进行 MD5 行签名校验，解决大模型行号漂移导致的改串行事故。
+6. **RiskPolicy & EnvLock (物理目录手刹)**：基于静态 AST 编译分析与物理路径锁，严格限制越权修改 `.env` 密钥文件与危险 Terminal 命令。
+7. **Memory & Context Pipeline (三层记忆管线)**：按 `session_id` 物理隔绝会话上下文，结合基于中英文 N-gram 的长期记忆召回与滑动窗口压缩。
+8. **Skills & MCP Protocol (生态扩展接口)**：原生支持 Markdown SOP 专家技能包（`SKILL.md`）与标准 MCP (Model Context Protocol) 客户端集成。
 
 ---
 
-### 📦 4. 安装与配置
+### 💡 3. 解决什么工程痛点？
+
+- **消除长任务跑偏失控**：支持长任务执行中途**实时插队干预 (Mid-Flight Steering)**，人类发送新消息 Agent 自动在线“掉头”，无需强杀进程或废弃上下文。
+- **消除代码改砸噩梦**：使用 MD5 行哈希（Hashline）校对目标代码块，行号漂移时自动拒绝写入并重新精确定位，代码改砸率归零。
+- **消除 API 波动导致的前功尽弃**：遇到模型 504 超时或断连时，自动降级切换至备用模型，保障长流式任务 100% 成功保活。
+
+---
+
+### 💻 4. 开发者 SDK 代码示例 (Developer Examples)
+
+#### 作为 Python 库直接调用 Agent
+```python
+from daming_agent.agent import LocalAgent
+
+agent = LocalAgent()
+
+# 运行任务
+response = agent.reply_message_stream("请分析 src/ 目录的代码结构并输出重构建议")
+print(response.content)
+```
+
+#### 动态构建 TaskGraph DAG 任务图
+```python
+from daming_agent.task_graph import TaskGraphManager
+
+manager = TaskGraphManager(agent.runtime_store)
+graph = manager.create_graph(
+    session_id="session_01",
+    nodes=[
+        {"id": "n1", "objective": "抓取最新科技新闻", "role": "researcher"},
+        {"id": "n2", "objective": "撰写分析报告", "role": "writer", "dependencies": ["n1"]},
+    ]
+)
+```
+
+---
+
+### 📦 5. 安装与快速上手
 
 ```bash
-# 1. 一键安装
+# 一键安装
 pip install git+https://github.com/dylanma8232-art/Daming-Agent.git
 
-# 2. 配置文件
+# 配置文件
 cp .env.example .env
 ```
 
@@ -68,34 +109,49 @@ python app.py
 
 ## 🇬🇧 English
 
-### 🤖 1. What is Daming Agent?
+### 🏛️ 1. What is Daming Agent Framework?
 
-**Daming Agent is an autonomous AI digital worker deployed on your local machine or server.**
+**Daming Agent** is a modular, decoupled Python **AI Agent Core Framework** equipped with multi-agent orchestration and industrial security guardrails.
 
-Simply send a natural language task via **CLI Terminal** or **Feishu/Lark Bot** (e.g., *"Refactor my Python repository"*, *"Scrape the latest tech news into Excel"*, *"Summarize this PDF"*), and it autonomously performs:
+It provides developers with a full **Agent Runtime**, decoupling the model layer, memory layer, orchestration layer, security layer, and channel layer.
 
-- 💻 **Code Engineering**: Reads codebases, debugs issues, modifies code safely, and runs tests.
-- 🌐 **Web Automation**: Operates headless browsers via Playwright for deep research & web scraping.
-- 📄 **Document Processing**: Parses & generates PDF, Word (.docx), and Excel (.xlsx) reports.
-- 💬 **Feishu/Lark Bot Integration**: Native WebSocket integration with exclusive reactions and cards.
-
----
-
-### ✨ 2. Key Technical Highlights
-
-- 🔀 **Mid-Flight Live Steering**: Redirect a running agent via natural messages mid-task. No process restart, no context loss.
-- 🛡️ **Hashline Precision Editing**: Mandatory MD5 line-checksum verification prevents code-drift corruption during large file edits.
-- ⚡ **Automatic Model Failover**: API timeout or 5xx disconnect? The agent seamlessly switches to backup LLM chains in seconds.
-- 🛑 **EnvLock Physical Safety Gate**: AST static analysis + physical directory locks prevent credential leaks and unauthorized writes.
-- 🧠 **4 Cognitive Engines**: Dynamically dispatches **ReAct**, **TaskGraph DAG**, **Supervisor**, or **Reflection** based on task complexity.
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        Daming Agent Core Framework                     │
+├────────────────────────────────────────────────────────────────────────┤
+│ 1. Channels Layer        │ CLI REPL / Feishu WebSocket / Outbox Queue     │
+│ 2. Router Layer          │ IntentRouter / ModelRouter (Auto Failover)     │
+│ 3. Orchestration Layer   │ TaskGraphManager (DAG) / SubagentManager      │
+│ 4. Memory System         │ Memory (Session Isolated) / ContextManager     │
+│ 5. Security Layer        │ RiskPolicy (EnvLock) / Hashline Precision Edit │
+│ 6. Extensibility Layer   │ SkillManager (SOP) / ToolRegistry / MCP Client │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-### 💡 3. Problems Solved
+### 🧩 2. Core Architecture Components
 
-- **Eliminates Uncontrollable Long Tasks**: No need to kill processes when tasks drift.
-- **Eliminates Code Edit Corruption**: MD5 line hashing guarantees zero code drift accidents.
-- **Eliminates API Timeout Crashes**: Failover chain keeps streaming tasks 100% alive.
+1. **ReAct & IntentRouter**: Dynamically filters unused tool schemas based on intent classification, reducing prompt tokens by up to 60%.
+2. **TaskGraphManager (DAG Engine)**: Decouples planning from execution, building DAG topology graphs with `supervisor`, `executor`, and `reviewer` nodes.
+3. **SubagentManager (Parallel Orchestrator)**: Spawns and manages parallel sub-agents in the background with SQLite state snapshots.
+4. **ModelRouter (Failover Engine)**: Dynamic model registration with seamless failover to backup model chains upon timeouts or 5xx failures.
+5. **Hashline Precision Editor**: Mandatory MD5 line-level checksum verification on every file edit, eliminating line-drift code corruption.
+6. **RiskPolicy & EnvLock**: AST static code analysis + physical directory locks to prevent credential leaks and bad write operations.
+7. **Memory & Context Pipeline**: Session-isolated memory with N-gram keyword recall and rolling history token budget management.
+8. **Skills & MCP Protocol**: Native support for Markdown SOP skills (`SKILL.md`) and standard Model Context Protocol (MCP) clients.
+
+---
+
+### 💻 3. Developer Usage Examples
+
+```python
+from daming_agent.agent import LocalAgent
+
+agent = LocalAgent()
+response = agent.reply_message_stream("Analyze project structure and generate report")
+print(response.content)
+```
 
 ---
 
@@ -117,5 +173,5 @@ Free for non-commercial research. Commercial deployments require open-sourcing u
 
 ## 🤝 社区 Community
 
-欢迎提 [Issue](https://github.com/dylanma8232-art/Daming-Agent/issues) 反馈问题或建议！
+欢迎提交 [GitHub Issues](https://github.com/dylanma8232-art/Daming-Agent/issues) 反馈问题或建议！
 Found a bug or have an idea? Feel free to open an [Issue](https://github.com/dylanma8232-art/Daming-Agent/issues)!
