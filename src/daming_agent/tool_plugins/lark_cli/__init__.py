@@ -1,0 +1,1 @@
+"""Lark CLI Tool plugin."""

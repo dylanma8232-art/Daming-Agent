@@ -1,0 +1,37 @@
+# Environment & Credentials
+.env
+*.env
+!.env.example
+
+# Local Data & Databases
+data/
+workspace/
+logs/
+memory/
+wiki/
+.agents/
+skills-lock.json
+*.command
+*.sqlite3
+*.db
+*.jsonl
+*.log
+
+
+# Python & Cache
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE & OS
+.codegraph/
+.idea/
+.vscode/
+.DS_Store
+
+# Virtual Environment
+.venv/
+env/
+venv/
