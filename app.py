@@ -13,7 +13,6 @@ AGENT_DIR = SRC_DIR / "daming_agent"
 if str(AGENT_DIR) not in sys.path:
     sys.path.insert(0, str(AGENT_DIR))
 
-import uvicorn
 from dotenv import load_dotenv
 
 from daming_agent.agent import LocalAgent
@@ -22,30 +21,7 @@ from daming_agent.channels.feishu_channel import FeishuChannel
 from daming_agent.logger import get_logger, init_logging
 from daming_agent.process_lock import ProcessLock
 
-
 logger = get_logger("app")
-
-
-def start_dashboard(agent: LocalAgent, port: int = 8000) -> tuple[uvicorn.Server, threading.Thread]:
-    """在同一进程内启动管理后台，复用同一个 Agent 运行时。"""
-    from daming_agent.web_server import app as dashboard_app, configure_agent
-
-
-    configure_agent(agent)
-    server = uvicorn.Server(
-        uvicorn.Config(dashboard_app, host="127.0.0.1", port=port, log_level="warning")
-    )
-    thread = threading.Thread(target=server.run, daemon=True, name="daming-web-dashboard")
-    thread.start()
-    for _ in range(40):
-        if server.started or not thread.is_alive():
-            break
-        time.sleep(0.05)
-    if server.started:
-        logger.info(f"🌐 管理后台已启动: http://127.0.0.1:{port}")
-    else:
-        logger.warning(f"⚠️ 管理后台未能绑定 127.0.0.1:{port}；端口可能已被其他服务占用。")
-    return server, thread
 
 
 def main() -> None:
@@ -56,7 +32,7 @@ def main() -> None:
     parser.add_argument(
         "--server",
         action="store_true",
-        help="以后台守护服务模式运行（开启 Web 管理后台 + 飞书 Bot，无 CLI 交互中断）",
+        help="以后台守护服务模式运行（开启飞书 Bot 常驻服务，无 CLI 交互中断）",
     )
     parser.add_argument(
         "--cli",
@@ -68,17 +44,12 @@ def main() -> None:
         action="store_true",
         help="以独立常驻模式运行飞书 Bot",
     )
-    parser.add_argument(
-        "--all",
-        action="store_true",
-        help="（混合模式）同时运行 Web 管理后台、飞书 Bot 与终端 CLI 对话",
-    )
 
     args = parser.parse_args()
 
     # 默认模式处理：若未传任何参数，或显式传 --server，默认作为后台守护服务运行
-    is_server_mode = args.server or (not args.cli and not args.feishu and not args.all)
-    daemon_mode = args.feishu or args.all or is_server_mode
+    is_server_mode = args.server or (not args.cli and not args.feishu)
+    daemon_mode = args.feishu or is_server_mode
     process_lock = None
     if daemon_mode:
         process_lock = ProcessLock(Path(__file__).resolve().parent / "logs" / "daming-agent.lock")
@@ -90,14 +61,9 @@ def main() -> None:
         logger.info(f"🔒 已获取 Daming Agent 守护服务单实例锁（PID: {os.getpid()}）。")
 
     agent = None
-    dashboard_server, dashboard_thread = None, None
 
     try:
         agent = LocalAgent()
-        if agent.config.get("server.dashboard_enabled", False):
-            dashboard_server, dashboard_thread = start_dashboard(agent)
-        else:
-            logger.info("ℹ️ 自带 Web 管理后台已停用。")
 
         # 1. 独立飞书 Bot 模式
         if args.feishu:
@@ -124,7 +90,7 @@ def main() -> None:
             )
             return
 
-        # 尝试启动飞书渠道（Server 模式 或 All 模式）
+        # 尝试启动飞书渠道
         feishu_app_id = os.getenv("FEISHU_APP_ID", "").strip()
         feishu_app_secret = os.getenv("FEISHU_APP_SECRET", "").strip()
 
@@ -147,7 +113,6 @@ def main() -> None:
         if is_server_mode:
             logger.info("==================================================")
             logger.info("🚀 Daming Agent 守护服务已进入常驻运行状态")
-            logger.info("🌐 管理后台地址: http://127.0.0.1:8000")
             logger.info("按 Ctrl+C 可停止 Agent 后台守护服务")
             logger.info("==================================================")
             try:
@@ -157,22 +122,7 @@ def main() -> None:
                 logger.info("🛑 收到终止信号，正在关闭服务...")
             return
 
-        # 4. Legacy All 混合模式（包含 CLI 终端）
-        if args.all:
-            logger.info("💬 启动混合交互模式 (包含 CLI 终端)...")
-            cli_channel = CLIChannel()
-            cli_channel.start(
-                agent_callback=agent.reply_message,
-                agent_stream_callback=agent.reply_message_stream,
-                agent_control_callback=agent.control_conversation,
-                agent_ingress_callback=agent.prepare_incoming_message,
-            )
-
     finally:
-        if dashboard_server is not None:
-            dashboard_server.should_exit = True
-        if dashboard_thread is not None and dashboard_thread.is_alive():
-            dashboard_thread.join(timeout=5)
         if agent is not None:
             try:
                 agent.close()
@@ -188,3 +138,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

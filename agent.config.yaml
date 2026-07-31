@@ -13,10 +13,6 @@ model:
   temperature: 0.7
   max_retries: 3
 
-server:
-  dashboard_enabled: false # 停用自带的 Web 控制台
-
-
 context:
   max_token_budget: 8000
   auto_summarize: true
@@ -26,11 +22,10 @@ sessions:
   channels:
     cli:
       scope: "conversation"
-    web_dashboard:
-      scope: "conversation"
     feishu:
       p2p_scope: "conversation"
       group_scope: "conversation" # 每个群一个上下文；不同群绝不串
+
 
 # 默认后台操控，不打断桌面；用户明确要求“打开给我看”时，Agent 才会显示窗口。
 browser:
