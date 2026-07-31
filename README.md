@@ -105,23 +105,82 @@ python app.py
 
 **Daming Agent** is a modular, decoupled Python **AI Agent Core Framework** equipped with multi-agent orchestration and industrial security guardrails.
 
+It provides a complete Agent Runtime, decoupling LLM model routing, memory management, DAG orchestration, security policy, and multi-channel adapters. It operates autonomously in CLI and Feishu/Lark Workspaces, and can be integrated into any Python project via SDK.
+
 ---
 
 ### ✨ 2. Key Advantages
 
-- 🔀 **Mid-Flight Live Steering**: Redirect a running agent via natural messages mid-task. No process restart, no context loss.
-- 🛡️ **Hashline Precision Editing**: Mandatory MD5 line-checksum verification prevents line-drift code corruption during file edits.
-- ⚡ **Automatic Model Failover**: API timeout or 5xx disconnect? The agent seamlessly switches to backup LLM chains in seconds.
-- 🛑 **EnvLock Physical Safety Gate**: AST static analysis + physical directory locks prevent credential leaks and unauthorized writes.
-- 🧠 **4 Cognitive Engines**: Dynamically dispatches **ReAct**, **TaskGraph DAG**, **Supervisor**, or **Reflection** based on task complexity.
+#### 🔀 Mid-Flight Live Steering
+Interrupt and redirect a running agent mid-task via natural messages without process restarts or context loss.
+
+#### 🛡️ Hashline Precision Editing
+Mandatory MD5 line-checksum verification on every file edit prevents line-drift code corruption during large file refactoring.
+
+#### ⚡ Automatic Model Failover
+When the primary LLM times out (504) or fails (5xx), the system seamlessly failovers to backup model chains in seconds. Tasks stay 100% alive.
+
+#### 🛑 EnvLock Physical Safety Gate
+AST static analysis + physical directory locks prevent credential leaks (`.env`) and destructive shell commands.
+
+#### 💬 Universal Channels & Outbox
+Native support for CLI REPL terminal and Feishu/Lark WebSocket bots (with reaction state updates and interactive cards).
 
 ---
 
-### 📦 3. Installation & Setup
+### 🧠 3. 4 Cognitive Engines
+
+| Engine | Best For | Mechanism |
+| :--- | :--- | :--- |
+| **⚡ ReAct Engine** | Simple Q&A and instant tools | Rapid Reason-Act-Observe loop |
+| **🕸️ TaskGraph DAG** | Complex multi-step engineering | Decoupled Plan & Parallel Execute DAG |
+| **👑 Supervisor** | Multi-role & independent audit | Master (Plan) + Worker + Auditor 3-tier governance |
+| **🔍 Reflection** | Post-failure analysis | Hindsight memory review & error avoidance |
+
+---
+
+### 💡 4. Problems Solved
+
+- **Eliminates Uncontrollable Long Tasks**: No process killing required when tasks drift mid-flight.
+- **Eliminates Code Edit Corruption**: MD5 line hashing guarantees zero code drift accidents.
+- **Eliminates API Timeout Crashes**: Automatic failover chain keeps streaming tasks 100% alive.
+
+---
+
+### 💻 5. Developer SDK Example
+
+```python
+from daming_agent import DamingAgent
+
+# Initialize DamingAgent
+agent = DamingAgent()
+
+# Stream response
+response = agent.reply_message_stream("Analyze project structure and generate refactoring suggestions")
+print(response.content)
+```
+
+---
+
+### 📦 6. Installation & Setup
 
 ```bash
+# 1. One-line Installation
 pip install git+https://github.com/dylanma8232-art/Daming-Agent.git
+
+# 2. Setup env
 cp .env.example .env
+```
+
+Configure `.env`:
+```env
+CLOUD_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+CLOUD_API_KEY=your_api_key_here
+CLOUD_MODEL=qwen3.7-plus
+```
+
+Run:
+```bash
 python app.py
 ```
 
