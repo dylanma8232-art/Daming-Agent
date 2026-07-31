@@ -1,108 +1,128 @@
-# 🚀 Daming Agent
-
-**工业级通用自主 AI Agent 框架**
-**Industrial-Grade Autonomous AI Agent Framework**
+# 🚀 Daming Agent - 工业级通用自主 AI Agent 框架
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/badge/release-v1.0.0-orange.svg)](https://github.com/dylanma8232-art/Daming-Agent/releases/tag/v1.0.0)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/dylanma8232-art/Daming-Agent/issues)
 
----
-
-## 这个框架解决什么问题？ / What Problems Does It Solve?
-
-**中文**：现有的 Agent 框架在真实生产场景中面临三个核心痛点：
-- **任务跑偏没有办法中途纠正**，只能杀掉进程从头开始
-- **修改大文件代码时容易因行号漂移而改错位置**，导致文件改砸
-- **模型 API 超时或断连后整个任务直接崩溃**，无法恢复
-
-Daming Agent 专门为解决这三个问题而设计，同时提供企业级的安全防护与灵活的多引擎推理架构。
-
-**English**: Most agent frameworks fail in production for three core reasons:
-- **No way to steer a running task** without killing the process
-- **Code edits corrupt files** when the LLM's line references drift
-- **Tasks crash permanently** when an API times out or disconnects
-
-Daming Agent is built to eliminate all three, while adding enterprise-grade safety guardrails and a flexible multi-engine reasoning system.
+[中文介绍](#-中文介绍) | [English Documentation](#-english-documentation)
 
 ---
 
-## ✨ 5 大核心亮点 / 5 Core Innovations
+## 🇨🇳 中文介绍
 
-### 🔀 中途实时插队干预 · Mid-Flight Live Steering
-任务进行到一半，你直接在飞书或 CLI 发一条消息，Agent 立刻调整方向，已完成的工作全部保留，零重启零中断。
+### 💡 这个框架解决什么问题？
 
-> A running task goes wrong halfway through? Just send a message. The agent pivots immediately — no restart, no lost context, no wasted work.
+在真实复杂工程与自动化场景中，传统 AI Agent 常常面临三大痛点：
+1. **中途纠偏难**：长链条任务跑偏时只能强杀进程重新开始，浪费时间与 Token。
+2. **改代码容易改砸**：编辑大文件时因上下文行号漂移导致替换错位置。
+3. **网络波动易崩溃**：大模型 API 超时或断联导致整个任务直接中途崩溃失败。
 
----
-
-### 🛡️ MD5 行哈希防改砸编辑 · Hashline Precision Editing
-每次修改代码文件前，强制对目标代码块进行 MD5 行哈希校验。如果 LLM 返回的行号已经漂移，系统自动拒绝写入并重新精确定位，从根本上杜绝"AI 帮我改代码反而改砸了"。
-
-> Before every file edit, the system verifies an MD5 hash of the exact target lines. If the LLM's line reference has drifted, the write is rejected and re-targeted. Code corruption = 0.
+**Daming Agent 专门为解决上述工程痛点而生，提供安全防错、中途干预与高可用容灾能力。**
 
 ---
 
-### ⚡ 模型超时自动熔断降级 · Automatic Model Failover
-主模型出现 504 超时或 5xx 错误时，系统自动捕获异常，按预设的容灾链（如 qwen → kimi → deepseek）秒级无感切换备用模型，长流式任务不会中断。管理员可直接和 Agent 说话来动态注册新模型，零代码修改。
+### ✨ 5 大核心亮点
 
-> When the primary model hits a timeout or 5xx, the system silently switches to the next model in the failover chain. Tasks keep running. Admins can register new models just by talking to the agent.
+#### 1. 🔀 中途实时插队干预 (Mid-Flight Live Steering)
+长任务执行过程中，用户可以通过飞书或 CLI 发送消息实时插队。Agent **无需重启进程**，即可原地点无感“掉头”重新规划，已完成的工作完整保留。
 
----
+#### 2. 🛡️ MD5 行哈希防改砸编辑 (Hashline Precision Editing)
+每次修改代码文件前，强制对目标代码块进行 **MD5 行签名校验**。当行号漂移时自动拒绝写入并重新定位，从根本上杜绝 AI 修改文件改改砸的事故。
 
-### 🛑 EnvLock 物理安全手刹 · Physical Safety Gate
-AST 编译级静态安检门，在执行前拦截危险指令（如删除密钥文件）。物理目录锁对核心路径加锁，保障 Agent 即使在高控制权下也不会越权破坏系统。
+#### 3. ⚡ 模型超时自动熔断降级 (Automatic Model Failover)
+主模型出现 504 超时或 5xx 报错时，系统按预设容灾链秒级无感切换至备用模型，任务不中断。管理员可以对话动态注册新模型。
 
-> AST-level static inspection intercepts dangerous commands before execution. Physical directory locks prevent unauthorized writes, even if the agent is manipulated into trying.
+#### 4. 🛑 EnvLock 物理安全手刹 (Physical Safety Gate)
+静态 AST 编译级安检门 + 物理目录锁，拦截危险命令与越权文件写入，防范越狱攻击与误操作。
 
----
-
-### 🧠 4 大认知引擎矩阵 · 4 Cognitive Engines
-按任务类型自动调度最适合的推理模式：
-
-| 场景 | 引擎 | 描述 |
-|:--|:--|:--|
-| 简单问答与即时操作 | ⚡ ReAct | 思考-行动-观察极速循环 |
-| 跨模块复杂工程 | 🕸️ TaskGraph DAG | 规划执行解耦，支持并发子任务 |
-| 多角色协作与独立审计 | 👑 Hierarchical Supervisor | 主控 + Worker + 独立 Auditor 三层治理 |
-| 任务失败后的经验积累 | 🔍 Reflection / Hindsight | 自动复盘，持续积累避错经验 |
-
-> The right reasoning engine is selected automatically based on task complexity — from instant ReAct loops to full Supervisor-Worker-Auditor governance for high-stakes engineering.
+#### 5. 🧠 4 大认知引擎矩阵 (4 Cognitive Engines)
+按任务复杂度自动调度最匹配的推理引擎：
+- **ReAct**：轻量单步思考-行动循环
+- **TaskGraph DAG**：解耦规划与执行，支持并发子任务
+- **Hierarchical Supervisor**：主控 + Worker + 独立 Auditor 三层治理
+- **Reflection / Hindsight**：任务失败自动复盘，持续积累避错经验
 
 ---
 
-## 📦 安装 / Installation
+### 📦 一键安装与配置
 
 ```bash
+# 一键安装
 pip install git+https://github.com/dylanma8232-art/Daming-Agent.git
-```
 
----
-
-## ⚙️ 配置 / Configuration
-
-```bash
+# 复制配置文件
 cp .env.example .env
 ```
 
-编辑 `.env` 填入你的配置 / Edit `.env` with your settings:
-
+在 `.env` 中填写你的大模型 API Key：
 ```env
-# 大模型接口（支持任意 OpenAI 兼容接口，包括阿里云百炼、Kimi、DeepSeek 等）
-# LLM API — supports any OpenAI-compatible endpoint
 CLOUD_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 CLOUD_API_KEY=your_api_key_here
 CLOUD_MODEL=qwen3.7-plus
-
-# 飞书 Bot（可选 / Optional）
-FEISHU_APP_ID=your_feishu_app_id
-FEISHU_APP_SECRET=your_feishu_app_secret
-FEISHU_ADMIN_OPEN_ID=your_feishu_open_id
 ```
 
-启动 / Start:
+启动 Agent：
+```bash
+python app.py
+```
 
+---
+
+## 🇬🇧 English Documentation
+
+### 💡 What Problems Does It Solve?
+
+In real-world production and automation, AI Agents frequently encounter three failure modes:
+1. **Inability to steer live tasks**: Getting off track forces a hard process kill, wasting time and tokens.
+2. **Code edit corruption**: Large file edits fail due to LLM line-number drift.
+3. **Fragile API connections**: Model timeouts or disconnects crash long-running workflows completely.
+
+**Daming Agent is designed specifically to eliminate these bottlenecks with precision guardrails, live steering, and automatic failover.**
+
+---
+
+### ✨ Key Features
+
+#### 1. 🔀 Mid-Flight Live Steering
+Interrupt a running agent mid-task with new instructions via CLI or Feishu. The agent pivots immediately without process restarts or context loss.
+
+#### 2. 🛡️ MD5 Hashline Precision Editing
+Every file modification validates an MD5 checksum of the target lines. If line references drift, the edit is rejected and relocated automatically, ensuring zero file corruption.
+
+#### 3. ⚡ Automatic Model Failover
+When the primary LLM times out or returns 5xx errors, the system failovers to backup models seamlessly in seconds. Admins can dynamically register new models via prompt.
+
+#### 4. 🛑 EnvLock Physical Safety Gate
+Combines AST static inspection with directory physical locks to block unauthorized file edits and destructive terminal commands.
+
+#### 5. 🧠 4 Cognitive Engines
+Dynamically dispatches reasoning engines based on task complexity:
+- **ReAct**: Fast single-step reasoning loop
+- **TaskGraph DAG**: Decoupled planning & parallel execution
+- **Hierarchical Supervisor**: Master-Worker-Auditor 3-tier governance
+- **Reflection / Hindsight**: Automatic post-failure review & error avoidance
+
+---
+
+### 📦 Installation & Setup
+
+```bash
+# One-line installation
+pip install git+https://github.com/dylanma8232-art/Daming-Agent.git
+
+# Environment setup
+cp .env.example .env
+```
+
+Configure `.env`:
+```env
+CLOUD_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+CLOUD_API_KEY=your_api_key_here
+CLOUD_MODEL=qwen3.7-plus
+```
+
+Run:
 ```bash
 python app.py
 ```
@@ -111,11 +131,11 @@ python app.py
 
 ## ⚖️ 许可证 / License
 
-[GNU AGPL v3.0](LICENSE) — 开源免费用于个人学习与非商业研究。任何将本框架用于商业产品或 SaaS 服务的，须将其产品代码全部以 AGPL 协议开源。
+本项目采用 [GNU AGPL v3.0](LICENSE) 官方许可证开库。个人学习与非商业研究免费使用。商业产品集成或 SaaS 服务使用必须以 AGPL 协议开源相应代码。
 
-> Free for personal learning and open-source research. Any commercial product or SaaS built with this framework must also be open-sourced under AGPL v3.
+Licensed under [GNU AGPL v3.0](LICENSE). Free for non-commercial research. Commercial deployments or SaaS integration require open-sourcing under AGPL.
 
-## 🤝 共创 / Community
+## 🤝 开源共创 / Community
 
-发现 Bug 或有功能建议？欢迎提 [Issue](https://github.com/dylanma8232-art/Daming-Agent/issues)，作者快速响应。
-Found a bug or have an idea? Open an [Issue](https://github.com/dylanma8232-art/Daming-Agent/issues).
+欢迎提交 [GitHub Issues](https://github.com/dylanma8232-art/Daming-Agent/issues) 反馈问题或建议！
+Found a bug or have a suggestion? Feel free to open an [Issue](https://github.com/dylanma8232-art/Daming-Agent/issues)!
