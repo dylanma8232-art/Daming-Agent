@@ -39,8 +39,8 @@ class IntentRouter:
 
         Intent.ORCHESTRATION: (("多代理", "子代理", "任务图", "并行", "拆分任务", "计划", "主从", "主控", "supervisor"), frozenset({"spawn_subagent", "spawn_parallel_subagents", "list_subagents", "get_subagent_result", "cancel_subagent", "create_task_graph", "create_supervisor_governance_graph", "dispatch_task_graph", "get_task_graph", "retry_task_graph_node", "add_task_graph_node", "rollback_task_graph", "manage_plan"})),
 
-        Intent.BROWSER_INTERACTION: (("浏览器", "打开网页", "点击", "截图", "登录", "扫码", "填写表单", "图片", "图像"), frozenset({"open_browser", "click", "click_visual", "type_text", "screenshot", "close_browser", "analyze_image"})),
-        Intent.RESEARCH: (("新闻", "搜索", "调研", "查一下", "检索", "网页", "web", "api", "http", "请求"), frozenset({"web_search", "fetch_webpage", "http_request"})),
+        Intent.BROWSER_INTERACTION: (("浏览器", "网页", "网站", "打开", "访问", "点击", "截图", "登录", "扫码", "填写表单", "图片", "图像"), frozenset({"open_browser", "click", "click_visual", "type_text", "screenshot", "close_browser", "analyze_image"})),
+        Intent.RESEARCH: (("新闻", "搜索", "调研", "查一下", "检索", "网页", "网站", "web", "api", "http", "请求"), frozenset({"web_search", "fetch_webpage", "http_request", "open_browser"})),
         Intent.FILE_WORK: (("文件", "代码", "项目", "目录", "日志", "读取", "写入", "修改", "修复", "搜索文件", "查找内容", "grep", "删除", "移动", "重命名"), frozenset({"list_files", "read_text_file", "read_file_lines", "write_file", "append_file", "replace_file_content", "run_command", "search_files", "move_file", "delete_file"})),
         Intent.OFFICE_WORK: (("pdf", "word", "ppt", "excel", "文档", "表格", "幻灯片"), frozenset({"read_office_file", "create_word_document", "create_ppt_presentation", "create_pdf_document", "create_excel_spreadsheet"})),
         Intent.SCHEDULE: (("定时", "cron", "提醒", "通知"), frozenset({"create_cron", "list_cron_jobs", "pause_cron", "resume_cron", "delete_cron", "notify"})),

@@ -110,6 +110,16 @@ def get_logger(name: str = "daming") -> logging.Logger:
     return logging.getLogger(f"daming.{name}")
 
 
+def silence_console_logging(level: int = logging.ERROR) -> None:
+    """在 CLI 模式下静音控制台日志输出，全量日志依然写入 logs/daming_app.log。"""
+    if not _logging_initialized:
+        init_logging()
+    root_logger = logging.getLogger("daming")
+    for handler in root_logger.handlers:
+        if isinstance(handler, SafeStreamHandler):
+            handler.setLevel(level)
+
+
 def get_recent_logs(max_lines: int = 200, level_filter: Optional[str] = None) -> list[str]:
     """读取最近的日志行，供 Web Dashboard 展示。"""
     if not APP_LOG_FILE.exists():
@@ -123,3 +133,4 @@ def get_recent_logs(max_lines: int = 200, level_filter: Optional[str] = None) ->
         return [l.rstrip() for l in lines[-max_lines:]]
     except Exception as e:
         return [f"读取日志文件失败: {e}"]
+

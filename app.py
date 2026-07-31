@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 from daming_agent.agent import LocalAgent
 from daming_agent.channels.cli_channel import CLIChannel
 from daming_agent.channels.feishu_channel import FeishuChannel
-from daming_agent.logger import get_logger, init_logging
+from daming_agent.logger import get_logger, init_logging, silence_console_logging
 from daming_agent.process_lock import ProcessLock
 
 logger = get_logger("app")
@@ -80,6 +80,7 @@ def main() -> None:
 
         # 2. 纯 CLI 终端对话模式
         if args.cli:
+            silence_console_logging()
             logger.info("💬 启动单机终端 CLI 对话模式...")
             cli_channel = CLIChannel()
             cli_channel.start(

@@ -81,18 +81,40 @@ class CLIChannel(BaseChannel):
             if agent_ingress_callback and not agent_ingress_callback(incoming):
                 continue
 
-            print("\nAgent > ", end="", flush=True)
-
+            status_line_active = False
+            printed_agent_prompt = False
             emitted_chunk = False
 
+            def clear_status_line():
+                nonlocal status_line_active
+                if status_line_active:
+                    sys.stdout.write("\r\033[K")
+                    sys.stdout.flush()
+                    status_line_active = False
+
             def print_chunk(chunk: str):
-                nonlocal emitted_chunk
+                nonlocal emitted_chunk, printed_agent_prompt
+                clear_status_line()
+                if not printed_agent_prompt:
+                    sys.stdout.write("\n\033[1;32mAgent >\033[0m ")
+                    printed_agent_prompt = True
                 emitted_chunk = True
                 sys.stdout.write(chunk)
                 sys.stdout.flush()
 
             def status_handler(status_text: str):
-                pass
+                nonlocal status_line_active, printed_agent_prompt
+                if printed_agent_prompt:
+                    return
+                clean_text = status_text.strip()
+                if clean_text.startswith("⚠️"):
+                    clear_status_line()
+                    sys.stdout.write(f"\n\033[33m💡 {clean_text}\033[0m\n")
+                    sys.stdout.flush()
+                else:
+                    sys.stdout.write(f"\r\033[K\033[90m⏳ [Agent] {clean_text}\033[0m")
+                    sys.stdout.flush()
+                    status_line_active = True
 
             if agent_stream_callback:
                 try:
@@ -107,17 +129,24 @@ class CLIChannel(BaseChannel):
                 else:
                     outgoing: OutgoingMessage = agent_stream_callback(incoming, on_chunk=print_chunk)
 
-                # 控制命令（例如 /model）不会产生流式 chunk；此前 CLI 因而
-                # 丢弃了它们的内容，只留下空的 "Agent >" 提示。
+                clear_status_line()
                 if outgoing.content and not emitted_chunk:
+                    if not printed_agent_prompt:
+                        sys.stdout.write("\n\033[1;32mAgent >\033[0m ")
+                        printed_agent_prompt = True
                     sys.stdout.write(outgoing.content)
                     sys.stdout.flush()
             else:
                 outgoing: OutgoingMessage = agent_callback(incoming)
+                clear_status_line()
+                if not printed_agent_prompt:
+                    sys.stdout.write("\n\033[1;32mAgent >\033[0m ")
+                    printed_agent_prompt = True
                 sys.stdout.write(outgoing.content)
                 sys.stdout.flush()
 
-            print("\n")
+            if printed_agent_prompt or emitted_chunk or outgoing.content:
+                print("\n")
             if outgoing.media_files:
                 print(f"📎 [生成附件路径]: {', '.join(outgoing.media_files)}\n")
 

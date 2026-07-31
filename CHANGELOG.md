@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.1] - 2026-07-31
+
+### 💬 CLI 终端交互 UI 重构 (CLI Terminal UI Refactoring)
+- **控制台日志隔离 (Log Noise Suppression)**：增加 `silence_console_logging()`，在 CLI 模式下静音标准输出的技术/路由/故障 Stack Trace，全量调试日志统一落盘存入 `logs/daming_app.log`。
+- **单行动态 Spinner + 自动擦除 (Collapsible Status Bar)**：基于 ANSI `\r\033[K` 清行指令实现单行动态加载状态，在 Agent 开始回复文本时自动擦除中途状态，保持终端极简与纯净。
+- **优雅降级 Notice**：熔断或故障自动降级时，输出淡黄色轻量提醒 Banner。
+
+### 🧭 意图路由优化 (Intent Router Optimization)
+- **通配通用浏览器能力挂载**：在 `IntentRouter` 中泛化网页与调研意图，消除死板具体的域名/特化网站硬编码词。
+- **浏览器能力直通**：保证 `open_browser` 在涉及网页/调研场景下始终对模型可用，实现“只要模型看到工具就能自主推理并解决问题”的通用架构设计。
+
 ## [v1.2.0] - 2026-07-31
 
 ### ✨ 核心功能升级 (Core Features)
