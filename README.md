@@ -11,31 +11,20 @@
 
 ## 🇨🇳 中文
 
-### 🏛️ 1. 框架全景架构
+### 🤖 1. 这个框架是做什么的？
 
-```
-               【交互渠道: 终端 CLI / 飞书 WebSocket Bot】
-                                  │
-                                  ▼
-               ┌──────────────────────────────────────┐
-               │     🔀 中途实时插队干预控制器        │
-               └──────────────────┬───────────────────┘
-                                  │
-                                  ▼
-               ┌──────────────────────────────────────┐
-               │    🧠 4 大认知引擎矩阵与动态路由器   │
-               │ (ReAct / TaskGraph DAG / Supervisor) │
-               └──────┬───────────┬───────────┬───────┘
-                      │           │           │
-          ┌───────────┴──┐   ┌────┴─────┐   ┌─┴────────────┐
-          │ 🛡️ MD5 行哈希 │   │ ⚡ 自动超时 │   │ 🛑 EnvLock  │
-          │  防改砸编辑器 │   │  熔断降级链│   │ 物理目录手刹 │
-          └──────────────┘   └──────────┘   └──────────────┘
-```
+**Daming Agent 是一个运行在你的电脑或服务器上的自主 AI 数字员工。**
+
+你只需在 **命令行终端 (CLI)** 或 **飞书群聊/私聊** 里给它一句自然语言指令（例如：“*帮我重构项目代码*”、“*抓取最新科技新闻导出 Excel*”、“*分析这份 PDF 并生成摘要*”），它就能全自动执行：
+
+- 💻 **代码开发与项目重构**：自动阅读代码库、定位 Bug、重写代码、运行 `pytest` 测试。
+- 🌐 **网页自动化与数据抓取**：操控无头浏览器搜集资料、抓取网页内容。
+- 📄 **文档处理与报表导出**：批量解析和生成 PDF、Word (.docx)、Excel (.xlsx) 报表。
+- 💬 **飞书 Bot 协作**：WebSocket 免公网 IP 接入飞书，支持单表情状态与交互卡片。
 
 ---
 
-### ✨ 2. 核心亮点
+### ✨ 2. 核心技术亮点
 
 - 🔀 **中途实时插队干预 (Mid-Flight Live Steering)**：长任务运行中随时发消息，Agent 在线实时掉头，不杀进程、不丢上下文。
 - 🛡️ **MD5 行哈希防改砸 (Hashline Precision Editing)**：修改大文件前强制校验 MD5 行签名，杜绝 LLM 行号漂移导致的代码改砸事故。
@@ -56,10 +45,10 @@
 ### 📦 4. 安装与配置
 
 ```bash
-# 一键安装
+# 1. 一键安装
 pip install git+https://github.com/dylanma8232-art/Daming-Agent.git
 
-# 配置文件
+# 2. 配置文件
 cp .env.example .env
 ```
 
@@ -79,34 +68,23 @@ python app.py
 
 ## 🇬🇧 English
 
-### 🏛️ 1. Framework Architecture
+### 🤖 1. What is Daming Agent?
 
-```
-               [Channels: CLI Terminal / Feishu WebSocket Bot]
-                                  │
-                                  ▼
-               ┌──────────────────────────────────────┐
-               │    🔀 Mid-Flight Live Steering       │
-               └──────────────────┬───────────────────┘
-                                  │
-                                  ▼
-               ┌──────────────────────────────────────┐
-               │    🧠 4 Cognitive Engine Matrix      │
-               │ (ReAct / TaskGraph DAG / Supervisor) │
-               └──────┬───────────┬───────────┬───────┘
-                      │           │           │
-          ┌───────────┴──┐   ┌────┴─────┐   ┌─┴────────────┐
-          │ 🛡️ MD5 Hashline│   │ ⚡ Model  │   │ 🛑 EnvLock   │
-          │ Precision Edit│   │ Failover │   │ Safety Gate  │
-          └──────────────┘   └──────────┘   └──────────────┘
-```
+**Daming Agent is an autonomous AI digital worker deployed on your local machine or server.**
+
+Simply send a natural language task via **CLI Terminal** or **Feishu/Lark Bot** (e.g., *"Refactor my Python repository"*, *"Scrape the latest tech news into Excel"*, *"Summarize this PDF"*), and it autonomously performs:
+
+- 💻 **Code Engineering**: Reads codebases, debugs issues, modifies code safely, and runs tests.
+- 🌐 **Web Automation**: Operates headless browsers via Playwright for deep research & web scraping.
+- 📄 **Document Processing**: Parses & generates PDF, Word (.docx), and Excel (.xlsx) reports.
+- 💬 **Feishu/Lark Bot Integration**: Native WebSocket integration with exclusive reactions and cards.
 
 ---
 
-### ✨ 2. Key Highlights
+### ✨ 2. Key Technical Highlights
 
 - 🔀 **Mid-Flight Live Steering**: Redirect a running agent via natural messages mid-task. No process restart, no context loss.
-- 🛡️ **Hashline Precision Editing**: Mandatory MD5 line-level checksum verification prevents line-drift code corruption during large file edits.
+- 🛡️ **Hashline Precision Editing**: Mandatory MD5 line-checksum verification prevents code-drift corruption during large file edits.
 - ⚡ **Automatic Model Failover**: API timeout or 5xx disconnect? The agent seamlessly switches to backup LLM chains in seconds.
 - 🛑 **EnvLock Physical Safety Gate**: AST static analysis + physical directory locks prevent credential leaks and unauthorized writes.
 - 🧠 **4 Cognitive Engines**: Dynamically dispatches **ReAct**, **TaskGraph DAG**, **Supervisor**, or **Reflection** based on task complexity.
