@@ -34,6 +34,7 @@ from lark_oapi.api.im.v1 import (
     CreateMessageReactionRequest,
     CreateMessageReactionRequestBody,
     DeleteMessageReactionRequest,
+    GetMessageResourceRequest,
     Emoji,
 )
 
@@ -50,8 +51,8 @@ def build_feishu_card(
 ) -> str:
     """构建飞书官方标准 Markdown 交互卡片 JSON 结构。
 
-    - 自动提取正文片段写入 `config.summary.content`，确保飞书侧边栏展示实际回答文本（对比图1）。
-    - 允许取消顶部冗余绿条 header（完成时自动精简 header），且支持在底部展示模型/状态元信息 Note（对标大明天子）。
+    - 自动提取正文片段写入 `config.summary.content`，确保飞书侧边栏展示实际回答文本。
+    - 允许取消顶部冗余绿条 header（完成时自动精简 header），支持在底部展示模型/状态元信息 Note。
     - 在思考中或执行工具时实时渲染状态。
     """
     raw_content = markdown_text.strip() if markdown_text else ""
@@ -75,22 +76,9 @@ def build_feishu_card(
         "elements": []
     }
 
-    # 只有当显式指定 title 时（例如思考/处理阶段），才渲染顶部 header
-    if title:
-        header_template = "green" if is_finished else "blue"
-        card_data["header"] = {
-            "title": {
-                "tag": "plain_text",
-                "content": title
-            },
-            "template": header_template
-        }
-
     display_text = markdown_text
     if not display_text or display_text == "\u200b":
         display_text = f"⏳ **{status_text or '正在思考并处理中...'}**"
-    elif status_text and not is_finished:
-        display_text = f"💡 *{status_text}*\n\n{markdown_text}"
 
     card_data["elements"].append({
         "tag": "markdown",
@@ -100,23 +88,6 @@ def build_feishu_card(
     if is_finished and model_info:
         card_data["elements"].extend([
             {"tag": "hr"},
-            {
-                "tag": "action",
-                "actions": [
-                    {
-                        "tag": "button",
-                        "text": {"tag": "plain_text", "content": "🔄 重新生成"},
-                        "type": "default",
-                        "value": {"action": "replan"}
-                    },
-                    {
-                        "tag": "button",
-                        "text": {"tag": "plain_text", "content": "📋 复制结论"},
-                        "type": "primary",
-                        "value": {"action": "copy_summary"}
-                    }
-                ]
-            },
             {
                 "tag": "note",
                 "elements": [
@@ -307,11 +278,42 @@ class FeishuChannel(BaseChannel):
                 chat_id = message.chat_id
                 chat_type = getattr(message, "chat_type", "p2p")
 
-                # 2. 解析文本消息内容
+                # 2. 解析文本/图片/文件等消息内容
                 text_content = ""
+                media_files: list[str] = []
+                downloads_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "workspace", "feishu_downloads"))
+
                 if message.message_type == "text":
                     body = json.loads(message.content)
                     text_content = body.get("text", "").strip()
+                elif message.message_type == "image":
+                    body = json.loads(message.content)
+                    image_key = body.get("image_key", "")
+                    if image_key and inbound_message_id:
+                        local_filename = f"feishu_img_{image_key[-8:]}.png"
+                        local_path = os.path.join(downloads_dir, local_filename)
+                        rel_path = f"workspace/feishu_downloads/{local_filename}"
+                        if self.download_message_resource(inbound_message_id, image_key, "image", local_path):
+                            media_files.append(rel_path)
+                            text_content = f"（用户在飞手中发送了一张图片，已下载至本地路径: `{rel_path}`，请分析该图片）"
+                        else:
+                            text_content = f"（用户发送了一张图片，image_key: {image_key}，下载失败）"
+                    else:
+                        text_content = "（用户在飞手中发送了一张图片）"
+                elif message.message_type == "file":
+                    body = json.loads(message.content)
+                    file_key = body.get("file_key", "")
+                    file_name = body.get("file_name", "received_file")
+                    if file_key and inbound_message_id:
+                        local_path = os.path.join(downloads_dir, file_name)
+                        rel_path = f"workspace/feishu_downloads/{file_name}"
+                        if self.download_message_resource(inbound_message_id, file_key, "file", local_path):
+                            media_files.append(rel_path)
+                            text_content = f"（用户在飞手中发送了一个文件 `{file_name}`，已下载至本地路径: `{rel_path}`，请查阅处理）"
+                        else:
+                            text_content = f"（用户发送了一个文件 `{file_name}`，file_key: {file_key}，下载失败）"
+                    else:
+                        text_content = f"（用户在飞手中发送了一个文件 `{file_name}`）"
                 else:
                     text_content = f"（收到非文本消息，类型: {message.message_type}）"
 
@@ -362,6 +364,7 @@ class FeishuChannel(BaseChannel):
                     content=text_content,
                     conversation_id=chat_id,
                     chat_type=chat_type,
+                    media_files=media_files,
                     raw_data={"message_id": inbound_message_id, "event_id": event_id},
                 )
 
@@ -378,13 +381,13 @@ class FeishuChannel(BaseChannel):
                     )
                     return
 
-                # 收到合法用户消息后，立刻给用户发的消息添加 👀 表情回复
+                # 收到合法用户消息后，立刻给用户发的消息添加 🤔 表情回复
                 if inbound_message_id:
                     threading.Thread(
                         target=self.add_reaction,
-                        args=(chat_id, inbound_message_id, "EYES"),
+                        args=(chat_id, inbound_message_id, "THINKING"),
                         daemon=True,
-                        name=f"feishu-eyes-{inbound_message_id[-6:]}",
+                        name=f"feishu-thinking-{inbound_message_id[-6:]}",
                     ).start()
 
                 command = self._control_action(text_content)
@@ -628,11 +631,11 @@ class FeishuChannel(BaseChannel):
                 )
                 self._flush_outbox()
 
-            # 处理完成后尝试自动为用户原消息标记 ✅ 完成表情
+            # 处理完成后自动将用户原消息上的临时状态表情直接删除清理
             if inbound_message_id:
                 threading.Thread(
-                    target=self.add_reaction,
-                    args=(chat_id, inbound_message_id, "CHECK_MARK"),
+                    target=self.clear_reaction,
+                    args=(chat_id, inbound_message_id),
                     daemon=True,
                     name=f"feishu-done-{inbound_message_id[-6:]}",
                 ).start()
@@ -736,12 +739,13 @@ class FeishuChannel(BaseChannel):
             return False
 
         emoji_mapping = {
-            "👀": "EYES", "eyes": "EYES", "EYES": "EYES",
+            "👀": "THINKING", "eyes": "THINKING", "EYES": "THINKING",
             "🧠": "THINKING", "thinking": "THINKING", "THINKING": "THINKING",
-            "✅": "CHECK_MARK", "check": "CHECK_MARK", "done": "CHECK_MARK", "CHECK_MARK": "CHECK_MARK", "OK": "CHECK_MARK",
-            "❌": "CROSS_MARK", "cross": "CROSS_MARK", "fail": "CROSS_MARK", "CROSS_MARK": "CROSS_MARK",
+            "✅": "THUMBSUP", "check": "THUMBSUP", "done": "THUMBSUP", "CHECK_MARK": "THUMBSUP", "OK": "OK", "THUMBSUP": "THUMBSUP", "👍": "THUMBSUP",
+            "❌": "THUMBSUP", "cross": "THUMBSUP", "fail": "THUMBSUP", "CROSS_MARK": "THUMBSUP",
         }
         target_emoji = emoji_mapping.get(reaction_type, reaction_type.upper())
+        logger.info(f"👉 [尝试为飞书消息添加 Reaction] message_id={message_id} emoji={target_emoji}")
 
         # 如果该消息之前在本地记录过已加表情，先清理旧表情
         with getattr(self, "_chat_queue_guard", threading.RLock()):
@@ -775,10 +779,53 @@ class FeishuChannel(BaseChannel):
             else:
                 msg = getattr(resp, "msg", "") if resp else ""
                 code = getattr(resp, "code", "") if resp else ""
-                logger.warning(f"⚠️ [飞书 Reaction 添加失败]: code={code}, msg={msg}")
+                logger.warning(
+                    f"⚠️ [飞书 Reaction 添加失败]: code={code}, msg={msg} "
+                    f"（提示：请检查飞书开放平台后台 -> 权限管理中是否开通了「以应用身份为消息添加表情回复 (im:message.reaction:create)」权限并已发布版本）"
+                )
                 return False
         except Exception as e:
             logger.warning(f"⚠️ [飞书 Reaction 异常]: {e}")
+            return False
+
+    def clear_reaction(self, chat_id: str, message_id: str) -> bool:
+        """会话处理完成后，直接删除/清理该消息上的所有临时状态表情。"""
+        if not message_id:
+            return False
+        with getattr(self, "_chat_queue_guard", threading.RLock()):
+            prev = getattr(self, "_message_reactions", {}).pop(message_id, None)
+
+        if prev:
+            prev_type, prev_reaction_id = prev
+            if prev_reaction_id:
+                logger.info(f"🧹 [清理飞书 Reaction 表情] message_id={message_id}")
+                return self.remove_reaction(chat_id, message_id, prev_reaction_id)
+        return True
+
+    def download_message_resource(self, message_id: str, file_key: str, resource_type: str, save_path: str) -> bool:
+        """从飞书 API 下载消息附带的图片/文件资源保存到本地路径。"""
+        if not message_id or not file_key or not hasattr(self, "client"):
+            return False
+        try:
+            req = GetMessageResourceRequest.builder() \
+                .message_id(message_id) \
+                .file_key(file_key) \
+                .type(resource_type) \
+                .build()
+            resp = self.client.im.v1.message_resource.get(req)
+            if resp and hasattr(resp, "success") and resp.success() and getattr(resp, "file", None):
+                os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                with open(save_path, "wb") as f:
+                    f.write(resp.file.read())
+                logger.info(f"📥 [飞书资源下载成功] message_id={message_id} key={file_key} -> {save_path}")
+                return True
+            else:
+                msg = getattr(resp, "msg", "") if resp else ""
+                code = getattr(resp, "code", "") if resp else ""
+                logger.warning(f"⚠️ [飞书资源下载失败]: code={code}, msg={msg}")
+                return False
+        except Exception as e:
+            logger.warning(f"⚠️ [飞书资源下载异常]: {e}")
             return False
 
 

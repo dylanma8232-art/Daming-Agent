@@ -157,7 +157,7 @@ class FeishuDeliveryTests(unittest.TestCase):
         self.addCleanup(self.thread_patch.stop)
 
     def _agent_threads(self):
-        return [t for t in _DeferredThread.created if not (getattr(t, "name", "") or "").startswith("feishu-eyes") and not (getattr(t, "name", "") or "").startswith("feishu-done") and not (getattr(t, "name", "") or "").startswith("feishu-react")]
+        return [t for t in _DeferredThread.created if not (getattr(t, "name", "") or "").startswith("feishu-eyes") and not (getattr(t, "name", "") or "").startswith("feishu-thinking") and not (getattr(t, "name", "") or "").startswith("feishu-done") and not (getattr(t, "name", "") or "").startswith("feishu-react")]
 
 
     def test_duplicate_event_id_creates_one_worker_and_one_card_reply(self):
